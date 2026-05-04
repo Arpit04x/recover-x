@@ -2,7 +2,7 @@ import axios from 'axios';
 import { mockBackend } from './mockBackend';
 
 // CONSTANT TO TOGGLE MOCK MODE
-const USE_MOCK_BACKEND = true;
+const USE_MOCK_BACKEND = false;
 
 const api = axios.create({
     baseURL: 'http://localhost:5000/api',
@@ -51,8 +51,8 @@ const handleMockGet = (url, config) => {
 const handleMockPost = (url, data) => {
     console.log(`[MOCK API] POST ${url}`, data);
     if (url === '/auth/login') return mockBackend.login(data.email, data.password);
-    if (url === '/lost') return mockBackend.reportLost(data);
-    if (url === '/found') return mockBackend.reportFound(data);
+    if (url === '/lost-items') return mockBackend.reportLost(data);
+    if (url === '/found-items') return mockBackend.reportFound(data);
     if (url.includes('/claim')) {
         const id = url.split('/')[2];
         return mockBackend.submitClaim(id, data);

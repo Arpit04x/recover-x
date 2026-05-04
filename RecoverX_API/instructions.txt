@@ -1,0 +1,19 @@
+1. Extract ZIP
+2. Open terminal inside folder
+3. Run:
+
+pip install -r requirements.txt
+
+4. Run:
+
+python app.py
+
+5. API will start at:
+http://127.0.0.1:5000
+
+6. Use this endpoint:
+
+POST /predict
+
+form-data:
+key = image (file)

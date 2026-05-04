@@ -17,15 +17,38 @@ const ReportLost = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
-    const categories = ['Electronics', 'Clothing', 'accessories', 'Books/Stationery', 'IDs/Wallets', 'Keys', 'Other'];
+    const categories = ['Electronics', 'Clothing', 'Accessories', 'Books/Stationery', 'IDs/Wallets', 'Keys', 'Bag', 'Other'];
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleFileChange = (e) => {
-        setFormData(prev => ({ ...prev, image: e.target.files[0] }));
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        setFormData(prev => ({ ...prev, image: file }));
+        
+        if (file) {
+            try {
+                const mlFormData = new FormData();
+                mlFormData.append('image', file);
+                const response = await fetch('http://localhost:5001/predict', {
+                    method: 'POST',
+                    body: mlFormData
+                });
+                const result = await response.json();
+                if (result.prediction && result.prediction !== 'uncertain') {
+                    let newCategory = 'Other';
+                    if (result.prediction === 'wallet') newCategory = 'IDs/Wallets';
+                    if (result.prediction === 'bag') newCategory = 'Accessories';
+                    
+                    setFormData(prev => ({ ...prev, category: newCategory }));
+                    alert(`RecoverX AI classified this as a ${result.prediction} (${(result.confidence * 100).toFixed(1)}% confident)`);
+                }
+            } catch (err) {
+                console.error("RecoverX ML Prediction failed", err);
+            }
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -40,7 +63,7 @@ const ReportLost = () => {
                 data.append(key, formData[key]);
             });
 
-            const response = await api.post('/lost', data, {
+            const response = await api.post('/lost-items', data, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -172,19 +195,35 @@ const ReportLost = () => {
                                 <label className="block text-sm font-medium text-gray-300">Icon / Image (Optional)</label>
                                 <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-white/10 border-dashed rounded-lg hover:border-purple-500/50 transition-colors bg-white/5">
                                     <div className="space-y-1 text-center">
-                                        <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                                        <div className="flex text-sm text-gray-400">
-                                            <label
-                                                htmlFor="image-upload"
-                                                className="relative cursor-pointer rounded-md font-medium text-purple-400 hover:text-purple-300 focus-within:outline-none"
+                                    {formData.image ? (
+                                        <div className="text-purple-400">
+                                            <CheckCircle className="mx-auto h-12 w-12 mb-2" />
+                                            <p className="text-sm font-medium">{formData.image.name}</p>
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setFormData(prev => ({ ...prev, image: null }))}
+                                                className="text-xs text-gray-400 hover:text-white mt-1"
                                             >
-                                                <span>Upload a file</span>
-                                                <input id="image-upload" name="image" type="file" className="sr-only" onChange={handleFileChange} accept="image/*" />
-                                            </label>
-                                            <p className="pl-1">or drag and drop</p>
+                                                Remove
+                                            </button>
                                         </div>
-                                        <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
-                                    </div>
+                                    ) : (
+                                        <>
+                                            <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                                            <div className="flex text-sm text-gray-400 justify-center">
+                                                <label
+                                                    htmlFor="image-upload"
+                                                    className="relative cursor-pointer rounded-md font-medium text-purple-400 hover:text-purple-300 focus-within:outline-none"
+                                                >
+                                                    <span>Upload a file</span>
+                                                    <input id="image-upload" name="image" type="file" className="sr-only" onChange={handleFileChange} accept="image/*" />
+                                                </label>
+                                                <p className="pl-1">or drag and drop</p>
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 10MB</p>
+                                        </>
+                                    )}
+                                </div>
                                 </div>
                             </div>
 
